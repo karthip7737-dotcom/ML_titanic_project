@@ -2,48 +2,55 @@ import joblib
 import pandas as pd
 import seaborn as sns
 import os
-
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler,OrdinalEncoder
 from sklearn.linear_model import LogisticRegression
 
-df = sns.load_dataset("titanic")
+#----------------------
+#Load Dataset
+#----------------------
 
-df = df[["pclass","sex","age","fare","survived"]]
 
-X = df.drop("survived",axis=1)
+df=pd.read_csv("data/Titanic.csv")
+df=sns.load_dataset("titanic")
 
-y = df['survived']
+#keep only required column
+df=df[["pclass","sex","age","fare","survived"]]
 
-numeric_features = ['age','fare']
-categorical_features = ['sex','pclass']
+x=df.drop("survived",axis=1)
+y=df["survived"]
 
-numeric_pipeline = Pipeline([
-    ("imputer",SimpleImputer(strategy="median")),
-    ("scaler",StandardScaler())
-])
+numeric_features=["age","fare"]
+categorical_features=["sex","pclass"]
 
-categorical_pipeline =  Pipeline([
-    ("imputer",SimpleImputer(strategy="most_frequent")),
-    ("Encoder",OrdinalEncoder())
-])
+#--------------
+#numerical pipeline
+#--------------
 
-preprocessor = ColumnTransformer([
-    ("num",numeric_pipeline,numeric_features),
-    ("cat",categorical_pipeline,categorical_features)
-])
+numeric_pipeline=Pipeline([("imputer",SimpleImputer(strategy="median")),("scaler",StandardScaler())])
 
-pipeline = Pipeline([
-    ("preprocessor",preprocessor),
-    ("classifier",LogisticRegression())
-])
+#-----------------
+#categorical Pipeline
+#-----------------
 
-pipeline.fit(X,y)
+categorical_pipeline=Pipeline([("imputer",SimpleImputer(strategy="most_frequent")),("encoder",OrdinalEncoder())])
 
+#-------------
+#combine
+#-------------
+
+preprocessor=ColumnTransformer([("num",numeric_pipeline,numeric_features),("cat",categorical_pipeline,categorical_features)])
+
+#-------------
+#final pipeline
+#-------------
+
+pipeline=Pipeline([("preprocessor",preprocessor),("classifier",LogisticRegression())])
+pipeline.fit(x,y)
+
+#create the model directory if it doesn't exit
 os.makedirs("model",exist_ok=True)
-
 joblib.dump(pipeline,"model/pipeline.pkl")
-
-print("Pipeline Saved Succesfully")
+print("Pipeline saved successfully")
